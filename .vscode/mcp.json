@@ -1,0 +1,17 @@
+{
+  "servers": {
+    "rnaseq": {
+      "type": "stdio",
+      "command": "wsl.exe",
+      "args": [
+        "-d",
+        "Ubuntu",
+        "-e",
+        "bash",
+        "-lc",
+        "exec \"$HOME/.local/bin/micromamba\" run --prefix \"$HOME/.local/share/rnaseq-mcp\" python server.py"
+      ],
+      "cwd": "${workspaceFolder}"
+    }
+  }
+}

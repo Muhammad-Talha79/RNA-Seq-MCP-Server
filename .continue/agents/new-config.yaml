@@ -1,0 +1,31 @@
+name: RNA-Seq MCP Agent
+version: 1.0.0
+schema: v1
+
+models:
+  - name: Groq Llama 3.3 70B
+    provider: groq
+    model: llama-3.3-70b-versatile
+    apiKey: ${{ secrets.GROQ_API_KEY }}
+    capabilities:
+      - tool_use
+
+  - name: Gemini 3.8 Flash
+    provider: gemini
+    model: gemini-3.8-flash
+    apiKey: ${{ secrets.GEMINI_API_KEY }}
+    capabilities:
+      - tool_use
+
+mcpServers:
+  - name: rnaseq
+    command: wsl.exe
+    args:
+      - -d
+      - Ubuntu
+      - -e
+      - bash
+      - -lc
+      - >-
+        exec "$HOME/.local/bin/micromamba" run
+        --prefix "$HOME/.local/share/rnaseq-mcp" python server.py
