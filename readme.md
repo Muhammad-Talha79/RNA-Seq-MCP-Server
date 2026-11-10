@@ -88,3 +88,6 @@ running through WSL, Windows drives are available under `/mnt` (for example,
 project creates `outputs` and `logs` folders in the server's working directory.
 It does not include FASTQ data or a Salmon index.
 # rna-seq-mcp
+
+
+[![M8ven Score](https://m8ven.ai/badge/mcp/muhammad-talha79-rna-seq-mcp-server-1ihnti?v=05501ef87c218e21024f78f6df111646)](https://m8ven.ai/mcp/muhammad-talha79-rna-seq-mcp-server-1ihnti?s=readme)
