@@ -194,15 +194,6 @@ python -m unittest discover -s tests -v
 
 Put files wherever you prefer and pass their full paths to the tool. When
 running through WSL, Windows drives are available under `/mnt` (for example,
-<<<<<<< HEAD
-`C:\data\reads.fastq.gz` is `/mnt/c/data/reads.fastq.gz`). By default, the
-project creates `outputs` and `logs` folders in the server's working directory.
-It does not include FASTQ data or a Salmon index.
-# rna-seq-mcp
-
-
-[![M8ven Score](https://m8ven.ai/badge/mcp/muhammad-talha79-rna-seq-mcp-server-1ihnti?v=05501ef87c218e21024f78f6df111646)](https://m8ven.ai/mcp/muhammad-talha79-rna-seq-mcp-server-1ihnti?s=readme)
-=======
 `C:\data\reads.fastq.gz` is `/mnt/c/data/reads.fastq.gz`). Runtime outputs are
 stored in the repository's `outputs/` and `logs/` folders by default. The
 repository includes small test fixtures, not production FASTQ datasets or a
@@ -229,4 +220,7 @@ outputs, logs, and the local vector database are stored under `outputs/` and
 `logs/` by default; set `RNASEQ_OUTPUT_DIR`, `RNASEQ_LOGS_DIR`, or
 `RNASEQ_RAG_DIR` to use other locations. Set `RNASEQ_DEFAULT_THREADS` to change
 the default Salmon thread count.
->>>>>>> e7bafb2 (Add RAG, research and web search tools; local model support; tests)
+
+[![M8ven Score](https://m8ven.ai/badge/mcp/muhammad-talha79-rna-seq-mcp-server-1ihnti?v=05501ef87c218e21024f78f6df111646)](https://m8ven.ai/mcp/muhammad-talha79-rna-seq-mcp-server-1ihnti?s=readme)
+
+
