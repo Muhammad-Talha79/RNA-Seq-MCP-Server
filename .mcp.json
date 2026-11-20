@@ -9,7 +9,7 @@
 				"-e",
 				"bash",
 				"-lc",
-				"exec \"$HOME/.local/bin/micromamba\" run --prefix \"$HOME/.local/share/rnaseq-mcp\" python server.py"
+				"if [ -f \"$HOME/.config/rnaseq-mcp/secrets\" ]; then . \"$HOME/.config/rnaseq-mcp/secrets\"; fi; exec \"$HOME/.local/bin/micromamba\" run --prefix \"$HOME/.local/share/rnaseq-mcp\" python server.py"
 			],
 			"tools": [
 				"*"

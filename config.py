@@ -1,21 +1,26 @@
+import os
 from pathlib import Path
 from pydantic import BaseModel
 
+
 class ServerConfig(BaseModel):
-    PROJECT_NAME: str = "RNASeq-Agent-Server"
+    PROJECT_NAME: str = os.environ.get("RNASEQ_PROJECT_NAME", "RNASeq-Agent-Server")
     VERSION: str = "1.0.0"
-    
-    # Base working directories
-    BASE_DIR: Path = Path.cwd()
-    DATA_DIR: Path = BASE_DIR / "data"
-    OUTPUT_DIR: Path = BASE_DIR / "outputs"
-    LOGS_DIR: Path = BASE_DIR / "logs"
-    
-    # Tool execution defaults
-    DEFAULT_THREADS: int = 8
+
+    BASE_DIR: Path = Path(
+        os.environ.get("RNASEQ_BASE_DIR", str(Path(__file__).resolve().parent))
+    )
+    DATA_DIR: Path = Path(os.environ.get("RNASEQ_DATA_DIR", str(BASE_DIR / "data")))
+    OUTPUT_DIR: Path = Path(
+        os.environ.get("RNASEQ_OUTPUT_DIR", str(BASE_DIR / "outputs"))
+    )
+    LOGS_DIR: Path = Path(os.environ.get("RNASEQ_LOGS_DIR", str(BASE_DIR / "logs")))
+    RAG_DIR: Path = Path(
+        os.environ.get("RNASEQ_RAG_DIR", str(OUTPUT_DIR / "knowledge_base"))
+    )
+    DEFAULT_THREADS: int = int(os.environ.get("RNASEQ_DEFAULT_THREADS", "8"))
 
 config = ServerConfig()
 
-# Ensure standard operational folders exist
 for folder in [config.DATA_DIR, config.OUTPUT_DIR, config.LOGS_DIR]:
     folder.mkdir(parents=True, exist_ok=True)

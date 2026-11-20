@@ -62,7 +62,7 @@ def register_pipeline_tools(mcp: Any):
             return f"❌ Validation Error: Input file not found: {missing[0]}"
 
         Path(output_dir).mkdir(parents=True, exist_ok=True)
-        cmd = ["fastqc", fastq_path, "-o", output_dir]
+        cmd = ["fastqc", fastq_path, "--outdir", output_dir]
         
         code, stdout, stderr = await run_async_command(cmd)
         if code == 0:

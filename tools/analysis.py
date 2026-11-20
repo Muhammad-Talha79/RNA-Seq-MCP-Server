@@ -1,7 +1,10 @@
+import math
 import pandas as pd
 from pathlib import Path
 from typing import Any
+import httpx
 from config import config
+from tools.research import NCBIClient, NCBIResponseError, gene_research_report
 from utils import run_async_command, validate_paths
 
 def register_analysis_tools(mcp: Any):
@@ -182,3 +185,93 @@ def register_analysis_tools(mcp: Any):
             )
         except Exception as e:
             return f"❌ Error analyzing DEG results: {str(e)}"
+
+    @mcp.tool()
+    async def research_differential_expression_results(
+        deseq2_csv_path: str,
+        organism: str = "Homo sapiens",
+        padj_cutoff: float = 0.05,
+        lfc_cutoff: float = 1.0,
+        top_n: int = 3,
+    ) -> str:
+        """Research the top significant genes in a DESeq2 results CSV.
+
+        Filters by adjusted p-value and absolute log2 fold-change, then retrieves
+        NCBI Gene summaries and PubMed citations for up to five genes. Use after
+        filtering DE results to automatically add cited biological context.
+
+        Args:
+            deseq2_csv_path: DESeq2 CSV containing gene_id, log2FoldChange, and padj.
+            organism: Scientific organism name, defaulting to Homo sapiens.
+            padj_cutoff: Maximum adjusted p-value (greater than 0 and at most 1).
+            lfc_cutoff: Minimum absolute log2 fold-change (zero or greater).
+            top_n: Maximum number of genes to research (1–5).
+        """
+        result_path = Path(deseq2_csv_path)
+        if not result_path.is_file():
+            return f"❌ File Error: {deseq2_csv_path} does not exist."
+        if result_path.stat().st_size > 20_000_000:
+            return "❌ Validation Error: DESeq2 results file must be at most 20 MB."
+        if not math.isfinite(padj_cutoff) or not 0 < padj_cutoff <= 1:
+            return "❌ Validation Error: padj_cutoff must be greater than 0 and at most 1."
+        if not math.isfinite(lfc_cutoff) or lfc_cutoff < 0:
+            return "❌ Validation Error: lfc_cutoff must be finite and non-negative."
+        if not 1 <= top_n <= 5:
+            return "❌ Validation Error: top_n must be between 1 and 5."
+        if not organism.strip():
+            return "❌ Validation Error: organism must not be empty."
+
+        try:
+            results = pd.read_csv(result_path, dtype={"gene_id": "string"})
+        except (OSError, pd.errors.ParserError, UnicodeDecodeError) as error:
+            return f"❌ Input CSV could not be read: {error}"
+        required_columns = {"gene_id", "log2FoldChange", "padj"}
+        missing_columns = required_columns.difference(results.columns)
+        if missing_columns:
+            return f"❌ DESeq2 results are missing columns: {', '.join(sorted(missing_columns))}"
+
+        fold_changes = pd.to_numeric(
+            results["log2FoldChange"], errors="coerce"
+        ).replace([float("inf"), float("-inf")], pd.NA)
+        adjusted_p_values = pd.to_numeric(
+            results["padj"], errors="coerce"
+        ).replace([float("inf"), float("-inf")], pd.NA)
+        gene_ids = results["gene_id"].astype("string").str.strip()
+        significant = results.assign(
+            _gene_id=gene_ids,
+            _fold_change=fold_changes,
+            _padj=adjusted_p_values,
+        )
+        significant = significant[
+            significant["_gene_id"].notna()
+            & significant["_gene_id"].ne("")
+            & significant["_padj"].notna()
+            & significant["_fold_change"].notna()
+            & significant["_padj"].ge(0)
+            & significant["_padj"].le(padj_cutoff)
+            & significant["_fold_change"].abs().ge(lfc_cutoff)
+        ].sort_values("_padj", ascending=True)
+        significant = significant.drop_duplicates(subset=["_gene_id"]).head(top_n)
+        if significant.empty:
+            return "No genes passed the requested adjusted p-value and fold-change thresholds."
+
+        reports: list[str] = []
+        try:
+            async with NCBIClient() as ncbi:
+                for _, row in significant.iterrows():
+                    gene_id = str(row["_gene_id"])
+                    report = await gene_research_report(
+                        ncbi, gene_id, organism.strip(), max_papers=2
+                    )
+                    reports.append(
+                        f"### {gene_id}: log2FC={row['_fold_change']:.3g}, "
+                        f"padj={row['_padj']:.3g}\n{report}"
+                    )
+        except httpx.HTTPStatusError as error:
+            return f"❌ NCBI returned HTTP {error.response.status_code}; retry later."
+        except httpx.TimeoutException:
+            return "❌ NCBI request timed out; retry later."
+        except (httpx.RequestError, NCBIResponseError):
+            return "❌ NCBI could not be reached or returned an invalid response; retry later."
+
+        return "Cited research for the top significant DESeq2 genes:\n\n" + "\n\n".join(reports)

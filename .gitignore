@@ -1,5 +1,9 @@
 .continue/.env
+.env
+.env.*
+!.env.example
 .venv/
 __pycache__/
 logs/
-outputs/
+outputs/.env
+.continue/
